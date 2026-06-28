@@ -1,4 +1,4 @@
-## 🤖 Alura Agente
+# 🤖 Alura Agente
 
 Agente de inteligencia artificial corporativo, abierto a cualquier colaborador de la empresa, capaz de responder preguntas en lenguaje natural sobre la documentación interna de **NimbusFlow**, una plataforma SaaS ficticia de gestión de proyectos.
 
@@ -106,8 +106,7 @@ cp .env.example .env
 
 python generate_sample_docs.py   # (opcional, ya vienen incluidos)
 
-export $(cat .env | xargs)       # Linux/Mac
-python agent.py                  # agente por consola
+python agent.py                  # agente por consola (lee GOOGLE_API_KEY desde .env automáticamente)
 # o
 python app.py                    # app web -> http://localhost:8080
 ```
@@ -152,7 +151,6 @@ cd alura_agente
 python3 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
 echo "GOOGLE_API_KEY=tu_clave" > .env
-export $(cat .env | xargs)
 nohup gunicorn -w 2 -b 0.0.0.0:8080 app:app > app.log 2>&1 &
 ```
 
@@ -178,4 +176,10 @@ Abrí `http://<IP_PUBLICA>:8080` en el navegador.
 
 ## 🛠️ Tecnologías usadas
 
+Python · LangChain · pypdf · python-docx · openpyxl · python-pptx · BeautifulSoup · FAISS · Gemini (`gemini-embedding-001` para embeddings, `gemini-2.5-flash` para generación) · Flask · Gunicorn · Oracle Cloud Infrastructure (OCI Compute)
+
+
 Python · LangChain · pypdf · python-docx · openpyxl · python-pptx · BeautifulSoup · FAISS · Gemini (Google Generative AI) · Flask · Gunicorn · Oracle Cloud Infrastructure (OCI Compute)
+
+
+<img width="1916" height="1078" alt="image" src="https://github.com/user-attachments/assets/1918dfc6-4a9f-4590-b56a-9eccb3fe1540" />
