@@ -182,4 +182,6 @@ Python · LangChain · pypdf · python-docx · openpyxl · python-pptx · Beauti
 Python · LangChain · pypdf · python-docx · openpyxl · python-pptx · BeautifulSoup · FAISS · Gemini (Google Generative AI) · Flask · Gunicorn · Oracle Cloud Infrastructure (OCI Compute)
 
 
-<img width="1916" height="1078" alt="image" src="https://github.com/user-attachments/assets/1918dfc6-4a9f-4590-b56a-9eccb3fe1540" />
+
+<img width="1916" height="1024" alt="TEST2" src="https://github.com/user-attachments/assets/038fc4ca-6430-462b-b847-78709a8749ba" />
+
