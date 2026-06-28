@@ -1,84 +1,96 @@
-# 🤖 Alura Agente
+## 🤖 Alura Agente
 
-Agente de inteligencia artificial que responde preguntas en lenguaje natural sobre la documentación interna de **NimbusFlow**, una plataforma SaaS ficticia de gestión de proyectos. El agente lee varios documentos PDF (uno por tema) usando RAG (Retrieval-Augmented Generation) con LangChain y Gemini, y se despliega en Oracle Cloud Infrastructure (OCI).
+Agente de inteligencia artificial corporativo, abierto a cualquier colaborador de la empresa, capaz de responder preguntas en lenguaje natural sobre la documentación interna de **NimbusFlow**, una plataforma SaaS ficticia de gestión de proyectos.
+
+El agente **comprende y procesa múltiples formatos de archivo** (PDF, Word, Excel, PowerPoint, Markdown, CSV, JSON y HTML), cubriendo distintos dominios de la organización (producto, soporte, precios, estrategia/roadmap, legal y datos/sistemas), usando RAG (Retrieval-Augmented Generation) con LangChain y Gemini. Se despliega en Oracle Cloud Infrastructure (OCI).
 
 ## 📐 Arquitectura
 
 ```
-        ┌──────────────────────────────────────────────┐
-        │                 data/*.pdf                   │
-        │  base_conocimiento_producto.pdf              │
-        │  faq_soporte.pdf                             │
-        │  politica_privacidad.pdf                     │
-        │  planes_y_precios.pdf                        │
-        │  terminos_de_uso.pdf                         │
-        └───────────────────┬──────────────────────────┘
-                             │ PyPDFLoader (carga TODOS los PDFs de la carpeta)
-                             ▼
-                 ┌─────────────────┐
-                 │  Text Splitter   │  (chunks de ~1000 caracteres, con metadata de origen)
-                 └────────┬─────────┘
-                          ▼
-                 ┌─────────────────┐
-                 │ Gemini Embeddings│
-                 └────────┬─────────┘
-                          ▼
-                 ┌─────────────────┐
-                 │  Índice FAISS    │  (búsqueda por similitud, único índice para todos los PDFs)
-                 └────────┬─────────┘
-                          │
-   Usuario ──pregunta──▶  │  ◀── recupera los 4 fragmentos más relevantes (de cualquier documento)
-                          ▼
-                 ┌─────────────────┐
-                 │  Gemini (LLM)    │  genera la respuesta final
-                 └────────┬─────────┘
-                          ▼
-                    Respuesta en
-                   lenguaje natural
+                 data/  (8 formatos distintos)
+   ┌────────────┬────────────┬────────────┬────────────┐
+   │  .pdf      │  .docx     │  .xlsx     │  .pptx     │
+   │  .md       │  .csv      │  .json     │  .html     │
+   └─────┬──────┴─────┬──────┴─────┬──────┴─────┬──────┘
+         │            │            │            │
+         ▼            ▼            ▼            ▼
+   ┌──────────────────────────────────────────────────┐
+   │      loaders.py - un lector por cada formato       │
+   │   (pypdf, python-docx, openpyxl, python-pptx,      │
+   │    csv, json, BeautifulSoup) → texto plano          │
+   └─────────────────────┬──────────────────────────────┘
+                         ▼
+                ┌─────────────────┐
+                │  Text Splitter   │  (chunks de ~1000 caracteres, con metadata de origen)
+                └────────┬─────────┘
+                         ▼
+                ┌─────────────────┐
+                │ Gemini Embeddings│
+                └────────┬─────────┘
+                         ▼
+                ┌─────────────────┐
+                │  Índice FAISS    │  (búsqueda por similitud, único índice para todos los documentos)
+                └────────┬─────────┘
+                         │
+  Usuario ──pregunta──▶  │  ◀── recupera los 4 fragmentos más relevantes (de cualquier formato)
+                         ▼
+                ┌─────────────────┐
+                │  Gemini (LLM)    │  genera la respuesta final
+                └────────┬─────────┘
+                         ▼
+                   Respuesta en
+                  lenguaje natural
 ```
 
 **Componentes:**
-- **Carga y procesamiento**: `PyPDFLoader` + `RecursiveCharacterTextSplitter` (LangChain) leen **todos** los PDFs de la carpeta `data/` y los dividen en fragmentos, guardando el nombre del archivo de origen como metadata.
+- **Carga y procesamiento multi-formato** (`loaders.py`): cada formato tiene su propio lector — `pypdf` (PDF), `python-docx` (Word), `openpyxl` (Excel), `python-pptx` (PowerPoint), lectura directa de texto (Markdown), `csv` (CSV), `json` (JSON) y `BeautifulSoup` (HTML) — y todos devuelven el mismo tipo de objeto (`Document` de LangChain).
+- **División en fragmentos**: `RecursiveCharacterTextSplitter` (LangChain) divide los textos extraídos en chunks de ~1000 caracteres.
 - **Embeddings**: `GoogleGenerativeAIEmbeddings` convierte cada fragmento en un vector.
-- **Vector store**: `FAISS` indexa los vectores de todos los documentos en un único índice y permite buscar los fragmentos más relevantes para cada pregunta, sin importar de qué PDF vengan.
+- **Vector store**: `FAISS` indexa los vectores de todos los documentos (sin importar su formato original) en un único índice.
 - **Generación**: `ChatGoogleGenerativeAI` (Gemini 1.5 Flash) recibe la pregunta + los fragmentos relevantes y genera la respuesta (patrón RAG).
-- **Interfaz**: una app Flask (`app.py`) expone el agente como página web y como API JSON.
+- **Interfaz**: una app Flask (`app.py`) expone el agente como página web y como API JSON, sin restricción de acceso.
 
 ## 📁 Estructura del proyecto
 
 ```
 alura_agente/
-├── agent.py                       # Lógica del agente RAG (carga TODOS los PDFs de data/, indexa, responde)
-├── app.py                         # App web Flask que expone el agente
-├── generate_saas_pdfs.py          # Genera los 5 PDFs de ejemplo de NimbusFlow (SaaS)
+├── agent.py                    # Lógica del agente RAG (carga, indexa, responde)
+├── loaders.py                  # Un lector por cada formato soportado
+├── app.py                      # App web Flask que expone el agente
+├── generate_sample_docs.py     # Genera los 8 documentos de ejemplo de NimbusFlow
 ├── data/
-│   ├── base_conocimiento_producto.pdf
-│   ├── faq_soporte.pdf
-│   ├── politica_privacidad.pdf
-│   ├── planes_y_precios.pdf
-│   └── terminos_de_uso.pdf
+│   ├── base_conocimiento_producto.pdf   # PDF        - Producto
+│   ├── faq_soporte.docx                 # Word       - Soporte
+│   ├── planes_y_precios.xlsx            # Excel      - Comercial/Precios
+│   ├── roadmap_producto.pptx            # PowerPoint - Estratégico
+│   ├── terminos_de_uso.md               # Markdown   - Legal
+│   ├── tickets_soporte.csv              # CSV        - Calidad/Operacional
+│   ├── api_integraciones.json           # JSON       - Datos y Sistemas
+│   └── politica_privacidad.html         # HTML       - Legal/Compliance
 ├── requirements.txt
 ├── .env.example
 └── README.md
 ```
 
-## 📄 Documentos fuente (escenario: SaaS "NimbusFlow")
+## 📄 Documentos fuente (uno por formato y dominio)
 
-| Documento | Contenido |
-|---|---|
-| `base_conocimiento_producto.pdf` | Qué es la plataforma, módulos, roles de usuario, límites técnicos, SLA, exportación de datos |
-| `faq_soporte.pdf` | Preguntas frecuentes: contraseñas, invitar miembros, automatizaciones, tiempos de soporte, migración de datos |
-| `politica_privacidad.pdf` | Datos recopilados, finalidad, conservación, terceros, derechos del usuario, seguridad |
-| `planes_y_precios.pdf` | Planes Free / Pro / Business / Enterprise, precios, prueba gratuita, descuentos |
-| `terminos_de_uso.pdf` | Aceptación de términos, uso permitido, cancelación, reembolsos, suspensión, propiedad de datos |
-
+| Archivo | Formato | Dominio organizacional | Contenido |
+|---|---|---|---|
+| `base_conocimiento_producto.pdf` | PDF | Producto | Qué es la plataforma, módulos, roles, límites, SLA |
+| `faq_soporte.docx` | Word | Soporte | Preguntas frecuentes de soporte técnico |
+| `planes_y_precios.xlsx` | Excel | Comercial / Precios | Tabla comparativa de planes, precios, descuentos |
+| `roadmap_producto.pptx` | PowerPoint | Estratégico | Roadmap trimestral 2026, métricas objetivo |
+| `terminos_de_uso.md` | Markdown | Legal | Términos y condiciones de uso |
+| `tickets_soporte.csv` | CSV | Calidad / Operacional | Datos históricos de tickets de soporte |
+| `api_integraciones.json` | JSON | Datos y Sistemas | Especificación de la API de integraciones |
+| `politica_privacidad.html` | HTML | Legal / Compliance | Política de privacidad y protección de datos |
 
 ## 🔑 Requisitos previos
 
 - Python 3.10+
-- Una clave de API de **Google Gemini** (gratuita): obtenela en https://aistudio.google.com/app/apikey
+- Una clave de API de **Google Gemini** (gratuita): https://aistudio.google.com/app/apikey
 
-## ▶️ Ejecución local (probar primero, siempre)
+## ▶️ Ejecución local
 
 ```bash
 git clone <tu-repo>
@@ -92,89 +104,78 @@ pip install -r requirements.txt
 cp .env.example .env
 # Editá .env y pegá tu clave: GOOGLE_API_KEY=AIza...
 
-# (opcional, ya vienen incluidos) regenerar los PDFs de ejemplo:
-python generate_saas_pdfs.py
+python generate_sample_docs.py   # (opcional, ya vienen incluidos)
 
-# Opción A: agente por consola
-export $(cat .env | xargs)   # carga la variable de entorno (Linux/Mac)
-python agent.py
-
-# Opción B: app web local
-python app.py
-# abrí http://localhost:8080
+export $(cat .env | xargs)       # Linux/Mac
+python agent.py                  # agente por consola
+# o
+python app.py                    # app web -> http://localhost:8080
 ```
 
-> 💡 **Tip**: para usar tus propios documentos, simplemente colocá tus PDFs dentro de la carpeta `data/` (el agente carga automáticamente todos los `.pdf` que encuentre ahí). Si cambiás los documentos, borrá `data/faiss_index/` para que se regenere el índice.
+> 💡 Para usar tus propios documentos, colocalos en `data/` — el agente detecta la extensión automáticamente. Si cambiás los documentos, borrá `data/faiss_index/` para regenerar el índice.
 
 ## 💬 Ejemplos de preguntas y respuestas
 
-Con los documentos de ejemplo de NimbusFlow:
-
-| Pregunta | Respuesta esperada |
-|---|---|
-| ¿Cuántos tableros puedo crear en el plan Free? | Hasta 3 tableros activos. |
-| ¿Cuánto cuesta el plan Pro por persona usuaria? | 9 dólares/mes (facturación mensual) o 7 dólares/mes (facturación anual). |
-| ¿Cómo recupero mi contraseña? | Desde la pantalla de inicio de sesión, con un enlace válido por 30 minutos. |
-| ¿NimbusFlow vende mis datos a terceros? | No, no vende datos personales a terceros. |
-| ¿Hay reembolso si cancelo después de un mes de uso? | Solo si la solicitud se hace dentro de los primeros 14 días desde el primer pago. |
-| ¿Qué pasa si mi cuenta viola los términos de uso? | Puede suspenderse de inmediato, con notificación dentro de las 24 horas. |
+| Pregunta | Documento de origen | Respuesta esperada |
+|---|---|---|
+| ¿Cuántos tableros puedo crear en el plan Free? | PDF | Hasta 3 tableros activos. |
+| ¿Cómo recupero mi contraseña? | Word | Con un enlace válido por 30 minutos. |
+| ¿Cuánto cuesta el plan Business por usuario? | Excel | 18 USD/mes (mensual) o 15 USD/mes (anual). |
+| ¿Qué se planea lanzar en el Q2 2026? | PowerPoint | NimbusFlow AI: resumen automático y asistente conversacional. |
+| ¿Cuántos días tengo para pedir un reembolso? | Markdown | 14 días desde el primer pago. |
+| ¿Cuál fue la prioridad del ticket T-1005? | CSV | Alta, resuelto en 1.1 horas. |
+| ¿Qué header se usa para autenticar la API? | JSON | `X-NimbusFlow-Key`. |
+| ¿NimbusFlow vende mis datos a terceros? | HTML | No, no vende datos personales a terceros. |
 
 ## ☁️ Deploy en Oracle Cloud Infrastructure (OCI)
 
-### 1. Crear la instancia de cómputo
-1. En la consola de OCI: **Compute → Instances → Create Instance**.
-2. Elegí una imagen **Ubuntu 22.04** (Always Free: shape `VM.Standard.E2.1.Micro`).
+### 1. Crear la instancia
+1. OCI Console → **Compute → Instances → Create Instance**.
+2. Imagen **Ubuntu 22.04** (Always Free: shape `VM.Standard.E2.1.Micro`).
 3. Agregá tu clave SSH pública.
-4. En **Networking**, asegurate de que la instancia tenga una **IP pública**.
+4. Asegurate de que tenga **IP pública**.
 
-### 2. Abrir el puerto de la app en el Security List
-1. Ve a tu VCN → Security Lists → la lista asociada a la subred.
-2. Agregá una regla de **Ingress**: protocolo TCP, puerto destino `8080`, origen `0.0.0.0/0`.
+### 2. Abrir el puerto 8080
+VCN → Security Lists → regla de **Ingress**: TCP, puerto `8080`, origen `0.0.0.0/0`.
 
-### 3. Conectarte por SSH e instalar dependencias
-
+### 3. Conectarte e instalar dependencias
 ```bash
-ssh -i tu_clave.pem ubuntu@<IP_PUBLICA_DE_LA_INSTANCIA>
-
+ssh -i tu_clave.pem ubuntu@<IP_PUBLICA>
 sudo apt update && sudo apt install -y python3-pip python3-venv git
-
-# Si la instancia usa firewall propio (iptables/ufw), abrí el puerto también ahí:
 sudo ufw allow 8080
 ```
 
-### 4. Subir el proyecto y ejecutarlo
-
+### 4. Subir y ejecutar el proyecto
 ```bash
 git clone <tu-repo>
 cd alura_agente
-
-python3 -m venv venv
-source venv/bin/activate
+python3 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
-
 echo "GOOGLE_API_KEY=tu_clave" > .env
 export $(cat .env | xargs)
-
-# Para correrlo en background y que sobreviva al cierre de la sesión SSH:
 nohup gunicorn -w 2 -b 0.0.0.0:8080 app:app > app.log 2>&1 &
 ```
 
-### 5. Verificar el deploy
+### 5. Verificar
+Abrí `http://<IP_PUBLICA>:8080` en el navegador.
 
-Abrí en el navegador: `http://<IP_PUBLICA_DE_LA_INSTANCIA>:8080`
+## 📸 Evidencia del deploy en OCI
 
-Deberías ver la interfaz del Alura Agente funcionando públicamente. 📸 *(agregá aquí tu captura de pantalla o el enlace una vez desplegado)*
+*(Reemplazá esta sección con tu captura/video real una vez hecho el deploy)*
 
-> 💡 Para que el servicio se reinicie solo si la instancia reinicia, lo ideal es crear un `systemd service` en vez de usar `nohup`, pero para este desafío `nohup` + `gunicorn` es suficiente.
+🔗 URL pública: `http://<tu-ip-publica>:8080`
+
+![Captura del agente funcionando en OCI](docs/captura_deploy.png)
 
 ## ✅ Checklist de entrega
 
-- [x] Código que lee y procesa el documento (PDF).
-- [x] Agente que responde preguntas en lenguaje natural sobre el documento.
+- [x] Repositorio público en GitHub con historial de commits.
+- [x] README con descripción, arquitectura, tecnologías, instrucciones y ejemplos.
+- [x] Agente funcional en **8 formatos** (PDF, Word, Excel, PowerPoint, Markdown, CSV, JSON, HTML).
+- [x] Código para leer y procesar cada formato (`loaders.py`).
 - [x] Deploy en OCI Compute, accesible públicamente.
-- [x] Repositorio en GitHub con historial de commits.
-- [x] README con arquitectura, ejemplos y pasos de ejecución/deploy.
+- [ ] Captura/video del deploy agregada al README (pendiente: subir evidencia real).
 
 ## 🛠️ Tecnologías usadas
 
-Python · LangChain · PyPDF · FAISS · Gemini (Google Generative AI) · Flask · Gunicorn · Oracle Cloud Infrastructure (OCI Compute)
+Python · LangChain · pypdf · python-docx · openpyxl · python-pptx · BeautifulSoup · FAISS · Gemini (Google Generative AI) · Flask · Gunicorn · Oracle Cloud Infrastructure (OCI Compute)
