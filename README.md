@@ -157,36 +157,12 @@ nohup gunicorn -w 2 -b 0.0.0.0:8080 app:app > app.log 2>&1 &
 ### 5. Verificar
 Abrí `http://<IP_PUBLICA>:8080` en el navegador.
 
-## 📸 Evidencia del deploy en OCI
-
-*(Reemplazá esta sección con tu captura/video real una vez hecho el deploy)*
-
-🔗 URL pública: `http://<tu-ip-publica>:8080`
-
-![Captura del agente funcionando en OCI](docs/captura_deploy.png)
-
-## ✅ Checklist de entrega
-
-- [x] Repositorio público en GitHub con historial de commits.
-- [x] README con descripción, arquitectura, tecnologías, instrucciones y ejemplos.
-- [x] Agente funcional en **8 formatos** (PDF, Word, Excel, PowerPoint, Markdown, CSV, JSON, HTML).
-- [x] Código para leer y procesar cada formato (`loaders.py`).
-- [x] Deploy en OCI Compute, accesible públicamente.
-- [ ] Captura/video del deploy agregada al README (pendiente: subir evidencia real).
-
-## 🛠️ Tecnologías usadas
-
-Python · LangChain · pypdf · python-docx · openpyxl · python-pptx · BeautifulSoup · FAISS · Gemini (`gemini-embedding-001` para embeddings, `gemini-2.5-flash` para generación) · Flask · Gunicorn · Oracle Cloud Infrastructure (OCI Compute)
-
-
-Python · LangChain · pypdf · python-docx · openpyxl · python-pptx · BeautifulSoup · FAISS · Gemini (Google Generative AI) · Flask · Gunicorn · Oracle Cloud Infrastructure (OCI Compute)
-
 
 ## 🚀 Pruebas de Funcionamiento
 
 ### 🔹 Ejecución Local
 
-http://localhost:5000
+🔗 URL Navegador: http://localhost:5000
 
 <img width="1916" height="1024" alt="TEST2" src="https://github.com/user-attachments/assets/038fc4ca-6430-462b-b847-78709a8749ba" />
 
@@ -196,12 +172,32 @@ http://<IP_PUBLICA_RESERVADA>:8080
 
 Ejemplo:
 
-http://159.112.143.233:8080
+🔗 URL pública:  http://159.112.143.233:8080
 
 <img width="1915" height="1036" alt="Avance_Agente_alura" src="https://github.com/user-attachments/assets/4ff58728-ea2a-49f2-8feb-87b88a9055d0" />
 
 
+## ✅ Checklist de entrega
+
+- [x] Repositorio público en GitHub con historial de commits.
+- [x] README con descripción, arquitectura, tecnologías, instrucciones y ejemplos.
+- [x] Agente funcional en **8 formatos** (PDF, Word, Excel, PowerPoint, Markdown, CSV, JSON, HTML).
+- [x] Código para leer y procesar cada formato (`loaders.py`).
+- [x] Deploy en OCI Compute, accesible públicamente.
+- [x] Captura del deploy agregada al README
+- [ ] Mejora de codigo segun sugerencias del TRELLO, deploy
+- [ ] Captura/video del deploy ded las mejoras sugerencias TRELLO
+
+## 🛠️ Tecnologías usadas
+
+Python · LangChain · pypdf · python-docx · openpyxl · python-pptx · BeautifulSoup · FAISS · Gemini (`gemini-embedding-001` para embeddings, `gemini-2.5-flash` para generación) · Flask · Gunicorn · Oracle Cloud Infrastructure (OCI Compute)
 
 
+Python · LangChain · pypdf · python-docx · openpyxl · python-pptx · BeautifulSoup · FAISS · Gemini (Google Generative AI) · Flask · Gunicorn · Oracle Cloud Infrastructure (OCI Compute)
 
+---
+
+© 2026 Alextech. Todos los derechos reservados.  
+Este proyecto es de uso educativo y demostrativo.  
+Queda prohibida la reproducción total o parcial sin autorización expresa.
 
